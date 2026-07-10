@@ -233,27 +233,64 @@ class Tank {
     return false;
   }
 
+  inBounds() {
+    return this.x >= 0 && this.y >= 0 &&
+           this.x + this.size <= GAME_W && this.y + this.size <= GAME_H;
+  }
+
   move(dir, checkMap) {
     const vec = DIR_VEC[dir];
-    const oldX = this.fx, oldY = this.fy;
+    const isHorizontal = (dir === DIR.LEFT || dir === DIR.RIGHT);
+    const oldFx = this.fx, oldFy = this.fy;
+
+    // 尝试全速移动
     this.fx += vec.x * this.speed;
     this.fy += vec.y * this.speed;
     this.x = Math.round(this.fx);
     this.y = Math.round(this.fy);
 
-    if (this.collidesMap(checkMap)) {
-      this.fx = oldX;
-      this.fy = oldY;
-      this.x = Math.round(this.fx);
-      this.y = Math.round(this.fy);
-      return false;
+    if (!this.collidesMap(checkMap) && this.inBounds()) {
+      return true;
     }
-    // 边界检查
-    if (this.x < 0) { this.x = 0; this.fx = 0; return false; }
-    if (this.y < 0) { this.y = 0; this.fy = 0; return false; }
-    if (this.x + this.size > GAME_W) { this.x = GAME_W - this.size; this.fx = this.x; return false; }
-    if (this.y + this.size > GAME_H) { this.y = GAME_H - this.size; this.fy = this.y; return false; }
-    return true;
+
+    // 回退
+    this.fx = oldFx;
+    this.fy = oldFy;
+    this.x = Math.round(this.fx);
+    this.y = Math.round(this.fy);
+
+    // 沿墙滑动：在垂直方向微调位置，逐个像素尝试
+    if (isHorizontal) {
+      for (const nudge of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6]) {
+        this.fy = oldFy + nudge;
+        this.y = Math.round(this.fy);
+        this.fx = oldFx + vec.x * this.speed;
+        this.x = Math.round(this.fx);
+        if (!this.collidesMap(checkMap) && this.inBounds()) {
+          return true;
+        }
+        this.fx = oldFx;
+        this.x = Math.round(this.fx);
+      }
+      this.fy = oldFy;
+      this.y = Math.round(this.fy);
+    } else {
+      for (const nudge of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6]) {
+        this.fx = oldFx + nudge;
+        this.x = Math.round(this.fx);
+        this.fy = oldFy + vec.y * this.speed;
+        this.y = Math.round(this.fy);
+        if (!this.collidesMap(checkMap) && this.inBounds()) {
+          return true;
+        }
+        this.fy = oldFy;
+        this.y = Math.round(this.fy);
+      }
+      this.fx = oldFx;
+      this.x = Math.round(this.fx);
+    }
+
+    return false;
   }
 
   snapToGrid() {
