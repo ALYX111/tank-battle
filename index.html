@@ -344,7 +344,7 @@ function getLevelMap(lv) {
 
 function spawnPlayer() {
   const px = Math.floor(COLS / 2) * TILE + (TILE / 2 - (TILE - 4) / 2);
-  const py = (ROWS - 1) * TILE;
+  const py = (ROWS - 2) * TILE;
   if (player) {
     player.resetPos(px, py, DIR.UP);
   } else {
